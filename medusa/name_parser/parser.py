@@ -512,7 +512,7 @@ class NameParser(object):
                     "Discarding result. Multi-version detected for '{name}': {guess}"
                     .format(name=name, guess=guess))
 
-        return ParseResult(guess, original_name=name, series_name=guess.get('alias') or guess.get('title'),
+        return ParseResult(guess, original_name=name, series_name=guess.get('title') or guess.get('alias'),
                            season_number=helpers.single_or_list(season_numbers, self.allow_multi_season),
                            episode_numbers=helpers.ensure_list(guess.get('episode')),
                            ab_episode_numbers=helpers.ensure_list(guess.get('absolute_episode')),
