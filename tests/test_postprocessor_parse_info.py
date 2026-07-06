@@ -116,3 +116,52 @@ def test_parse_info(p, monkeypatch, parse_method):
         'quality': quality,
         'version': version,
     }
+
+
+@pytest.mark.parametrize('p', [
+    {  # A broader resource (e.g. a season pack folder) must not expand the episodes parsed from the file name
+        'file_name': '[Judas] Boruto - 20.mkv',
+        'folder': '[Judas] Boruto 001-092 [BD 1080p][HEVC x265 10bit]',
+        'file_result': (None, [20], Quality.UNKNOWN, None),
+        'rel_path_result': (1, list(range(1, 93)), Quality.FULLHDBLURAY, None),
+        'expected': {
+            'season': 1,
+            'episodes': [20],
+            'quality': Quality.FULLHDBLURAY,
+        }
+    },
+    {  # A same-sized result from a broader resource may still correct the episode numbers
+        'file_name': '161219_06.mkv',
+        'folder': 'Show.Name.S12E02.1080p.WEB-DL',
+        'file_result': (None, [6], Quality.UNKNOWN, None),
+        'rel_path_result': (12, [2], Quality.FULLHDWEBDL, None),
+        'expected': {
+            'season': 12,
+            'episodes': [2],
+            'quality': Quality.FULLHDWEBDL,
+        }
+    },
+])
+def test_parse_info_episodes_from_broader_resource(p, monkeypatch, create_tvshow):
+    """A broader resource may correct but never expand the episodes parsed from a more specific one."""
+    # Given
+    show = create_tvshow(name='Show Name')
+    file_path = '/media/postprocess/{0}/{1}'.format(p['folder'], p['file_name'])
+    results = {
+        p['file_name']: (show,) + p['file_result'],
+        file_path: (show,) + p['rel_path_result'],
+        None: (None, None, [], None, None),
+    }
+    monkeypatch.setattr(PostProcessor, '_analyze_name', lambda self, name: results[name])
+    sut = PostProcessor(file_path=file_path)
+
+    # When
+    result_show, season, episodes, quality, version, airdate = sut._parse_info()
+
+    # Then
+    assert result_show is show
+    assert p['expected'] == {
+        'season': season,
+        'episodes': episodes,
+        'quality': quality,
+    }

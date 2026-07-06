@@ -594,7 +594,16 @@ class PostProcessor(object):
                 season = cur_season
 
             if cur_episodes:
-                episodes = cur_episodes
+                if episodes and len(cur_episodes) > len(episodes):
+                    # A broader resource (e.g. the folder name of a complete season pack)
+                    # may parse to a range of episodes. Don't let it expand the episodes
+                    # parsed from a more specific resource, only use it for the quality.
+                    self.log(u'Ignoring {amount} episode numbers parsed from {resource}, '
+                             u'keeping episode numbers {episodes} parsed from a previous resource'.format(
+                                 amount=len(cur_episodes), resource=resource, episodes=episodes),
+                             logger.DEBUG)
+                else:
+                    episodes = cur_episodes
 
             # we only get current version from anime
             if cur_version is not None:
